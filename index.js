@@ -25,7 +25,7 @@ let lastMessageWasSwipe = false;
 const defaultPrompts = {
     'createTask': 'Pause your roleplay. Please generate a numbered list of plain text tasks to complete an objective. The objective that you must make a numbered task list for is: "{{objective}}". The tasks created should take into account the character traits of {{char}}. These tasks may or may not involve {{user}} directly. Include the objective as the final task.',
     'checkTaskCompleted': 'Pause your roleplay. Determine if this task is completed: [{{task}}]. To do this, examine the most recent messages. Your response must only contain either true or false, and nothing else. Example output: true',
-    'currentTask':'Your current task is [{{task}}]. Balance existing roleplay with completing this task.',
+    'currentTask': 'Your current task is [{{task}}]. Balance existing roleplay with completing this task.',
 };
 
 let objectivePrompts = defaultPrompts;
@@ -35,7 +35,7 @@ let objectivePrompts = defaultPrompts;
 //###############################//
 
 // Return the task and index or throw an error
-function getTaskById(taskId){
+function getTaskById(taskId) {
     if (taskId == null) {
         throw 'Null task id';
     }
@@ -43,7 +43,7 @@ function getTaskById(taskId){
 }
 
 function getTaskByIdRecurse(taskId, task) {
-    if (task.id == taskId){
+    if (task.id == taskId) {
         return task;
     }
     for (const childTask of task.children) {
@@ -58,7 +58,7 @@ function getTaskByIdRecurse(taskId, task) {
 function substituteParamsPrompts(content, substituteGlobal) {
     content = content.replace(/{{objective}}/gi, currentObjective.description);
     content = content.replace(/{{task}}/gi, currentTask.description);
-    if (currentTask.parent){
+    if (currentTask.parent) {
         content = content.replace(/{{parent}}/gi, currentTask.parent.description);
     }
     if (substituteGlobal) {
@@ -82,12 +82,12 @@ async function generateTasks() {
     // Create tasks from generated task list
     for (const task of taskResponse.split('\n').map(x => x.trim())) {
         if (task.match(numberedListPattern) != null) {
-            currentObjective.addTask(task.replace(numberedListPattern,'').trim());
+            currentObjective.addTask(task.replace(numberedListPattern, '').trim());
         }
     }
     updateUiTaskList();
     setCurrentTask();
-    console.info(`Response for Objective: '${currentObjective.description}' was \n'${taskResponse}', \nwhich created tasks \n${JSON.stringify(currentObjective.children.map(v => {return v.toSaveState();}), null, 2)} `);
+    console.info(`Response for Objective: '${currentObjective.description}' was \n'${taskResponse}', \nwhich created tasks \n${JSON.stringify(currentObjective.children.map(v => { return v.toSaveState(); }), null, 2)} `);
     toastr.success(`Generated ${currentObjective.children.length} tasks`, 'Done!');
 }
 
@@ -127,15 +127,15 @@ async function checkTaskCompleted() {
     }
 }
 
-function getNextIncompleteTaskRecurse(task){
+function getNextIncompleteTaskRecurse(task) {
     if (task.completed === false // Return task if incomplete
         && task.children.length === 0 // Ensure task has no children, it's subtasks will determine completeness
         && task.parentId !== ''  // Must have parent id. Only root task will be missing this and we dont want that
-    ){
+    ) {
         return task;
     }
     for (const childTask of task.children) {
-        if (childTask.completed === true){ // Don't recurse into completed tasks
+        if (childTask.completed === true) { // Don't recurse into completed tasks
             continue;
         }
         const foundTask = getNextIncompleteTaskRecurse(childTask);
@@ -163,15 +163,15 @@ function setCurrentTask(taskId = null, skipSave = false) {
     // Don't just check for a current task, check if it has data
     const description = currentTask.description || null;
     if (description) {
-        const extensionPromptText =  substituteParamsPrompts(objectivePrompts.currentTask, true);
+        const extensionPromptText = substituteParamsPrompts(objectivePrompts.currentTask, true);
 
         // Remove highlights
-        $('.objective-task').css({'border-color':'','border-width':''});
+        $('.objective-task').css({ 'border-color': '', 'border-width': '' });
         // Highlight current task
         let highlightTask = currentTask;
-        while (highlightTask.parentId !== ''){
-            if (highlightTask.descriptionSpan){
-                highlightTask.descriptionSpan.css({'border-color':'yellow','border-width':'2px'});
+        while (highlightTask.parentId !== '') {
+            if (highlightTask.descriptionSpan) {
+                highlightTask.descriptionSpan.css({ 'border-color': 'yellow', 'border-width': '2px' });
             }
             const parent = getTaskById(highlightTask.parentId);
             highlightTask = parent;
@@ -220,34 +220,34 @@ class ObjectiveTask {
     deleteTaskButton;
     addTaskButton;
 
-    constructor ({id=undefined, description, completed=false, parentId=''}) {
+    constructor({ id = undefined, description, completed = false, parentId = '' }) {
         this.description = description;
         this.parentId = parentId;
         this.children = [];
         this.completed = completed;
 
         // Generate a new ID if none specified
-        if (id==undefined){
+        if (id == undefined) {
             this.id = getHighestTaskIdRecurse(taskTree) + 1;
         } else {
-            this.id=id;
+            this.id = id;
         }
     }
 
     // Accepts optional index. Defaults to adding to end of list.
     addTask(description, index = null) {
-        index = index != null ? index: index = this.children.length;
+        index = index != null ? index : index = this.children.length;
         this.children.splice(index, 0, new ObjectiveTask(
-            {description: description, parentId: this.id},
+            { description: description, parentId: this.id },
         ));
         saveState();
     }
 
-    getIndex(){
+    getIndex() {
         if (this.parentId !== null) {
             const parent = getTaskById(this.parentId);
             const index = parent.children.findIndex(task => task.id === this.id);
-            if (index === -1){
+            if (index === -1) {
                 throw `getIndex failed: Task '${this.description}' not found in parent task '${parent.description}'`;
             }
             return index;
@@ -259,15 +259,15 @@ class ObjectiveTask {
     // Used to set parent to complete when all child tasks are completed
     checkParentComplete() {
         let all_completed = true;
-        if (this.parentId !== ''){
+        if (this.parentId !== '') {
             const parent = getTaskById(this.parentId);
-            for (const child of parent.children){
-                if (!child.completed){
+            for (const child of parent.children) {
+                if (!child.completed) {
                     all_completed = false;
                     break;
                 }
             }
-            if (all_completed){
+            if (all_completed) {
                 parent.completed = true;
                 console.info(`Parent task '${parent.description}' completed after all child tasks complated.`);
             } else {
@@ -308,10 +308,10 @@ class ObjectiveTask {
         this.branchButton = $(`#objective-task-add-branch-${this.id}`);
 
         // Handle sub-task forking style
-        if (this.children.length > 0){
-            this.branchButton.css({'color':'#33cc33'});
+        if (this.children.length > 0) {
+            this.branchButton.css({ 'color': '#33cc33' });
         } else {
-            this.branchButton.css({'color':''});
+            this.branchButton.css({ 'color': '' });
         }
 
         // Add event listeners and set properties
@@ -330,21 +330,21 @@ class ObjectiveTask {
         setCurrentTask();
     }
 
-    onCompleteClick(){
+    onCompleteClick() {
         this.completed = this.completedCheckbox.prop('checked');
         this.checkParentComplete();
         setCurrentTask();
     }
 
-    onDescriptionUpdate(){
+    onDescriptionUpdate() {
         this.description = this.descriptionSpan.text();
     }
 
-    onDescriptionFocusout(){
+    onDescriptionFocusout() {
         setCurrentTask();
     }
 
-    onDeleteClick(){
+    onDeleteClick() {
         const index = this.getIndex();
         const parent = getTaskById(this.parentId);
         parent.children.splice(index, 1);
@@ -352,7 +352,7 @@ class ObjectiveTask {
         setCurrentTask();
     }
 
-    onAddClick(){
+    onAddClick() {
         const index = this.getIndex();
         const parent = getTaskById(this.parentId);
         parent.addTask('', index + 1);
@@ -362,15 +362,15 @@ class ObjectiveTask {
 
     toSaveStateRecurse() {
         let children = [];
-        if (this.children.length > 0){
-            for (const child of this.children){
+        if (this.children.length > 0) {
+            for (const child of this.children) {
                 children.push(child.toSaveStateRecurse());
             }
         }
         return {
-            'id':this.id,
-            'description':this.description,
-            'completed':this.completed,
+            'id': this.id,
+            'description': this.description,
+            'completed': this.completed,
             'parentId': this.parentId,
             'children': children,
         };
@@ -415,7 +415,7 @@ function onEditPromptClick() {
 
     // Handle value updates
     $('#objective-prompt-generate').on('input', () => {
-        objectivePrompts.createTask =  $('#objective-prompt-generate').val();
+        objectivePrompts.createTask = $('#objective-prompt-generate').val();
     });
     $('#objective-prompt-check').on('input', () => {
         objectivePrompts.checkTaskCompleted = $('#objective-prompt-check').val();
@@ -449,7 +449,7 @@ async function newCustomPrompt() {
         toastr.warning('Please set custom prompt name to save.');
         return;
     }
-    if (customPromptName == 'default'){
+    if (customPromptName == 'default') {
         toastr.error('Cannot save over default prompt');
         return;
     }
@@ -461,7 +461,7 @@ async function newCustomPrompt() {
 
 function saveCustomPrompt() {
     const customPromptName = $('#objective-custom-prompt-select').find(':selected').val();
-    if (customPromptName == 'default'){
+    if (customPromptName == 'default') {
         toastr.error('Cannot save over default prompt');
         return;
     }
@@ -470,10 +470,10 @@ function saveCustomPrompt() {
     populateCustomPrompts();
 }
 
-function deleteCustomPrompt(){
+function deleteCustomPrompt() {
     const customPromptName = $('#objective-custom-prompt-select').find(':selected').val();
 
-    if (customPromptName == 'default'){
+    if (customPromptName == 'default') {
         toastr.error('Cannot delete default prompt');
         return;
     }
@@ -483,7 +483,7 @@ function deleteCustomPrompt(){
     loadCustomPrompt();
 }
 
-function loadCustomPrompt(){
+function loadCustomPrompt() {
     const optionSelected = $('#objective-custom-prompt-select').find(':selected').val();
     Object.assign(objectivePrompts, extension_settings.objective.customPrompts[optionSelected]);
 
@@ -492,10 +492,10 @@ function loadCustomPrompt(){
     $('#objective-prompt-extension-prompt').val(objectivePrompts.currentTask);
 }
 
-function populateCustomPrompts(){
+function populateCustomPrompts() {
     // Populate saved prompts
     $('#objective-custom-prompt-select').empty();
-    for (const customPromptName in extension_settings.objective.customPrompts){
+    for (const customPromptName in extension_settings.objective.customPrompts) {
         const option = document.createElement('option');
         option.innerText = customPromptName;
         option.value = customPromptName;
@@ -564,7 +564,7 @@ function updateUiTaskList() {
     $('#objective-tasks').empty();
 
     // Show button to navigate back to parent objective if parent exists
-    if (currentObjective){
+    if (currentObjective) {
         if (currentObjective.parentId !== '') {
             $('#objective-parent').show();
         } else {
@@ -573,7 +573,7 @@ function updateUiTaskList() {
     }
 
     $('#objective-text').val(currentObjective.description);
-    if (currentObjective.children.length > 0){
+    if (currentObjective.children.length > 0) {
         // Show tasks if there are any to show
         for (const task of currentObjective.children) {
             task.addUiElement();
@@ -609,8 +609,8 @@ function onChatDepthInput() {
     setCurrentTask(); // Ensure extension prompt is updated
 }
 
-function onObjectiveTextFocusOut(){
-    if (currentObjective){
+function onObjectiveTextFocusOut() {
+    if (currentObjective) {
         currentObjective.description = $('#objective-text').val();
         saveState();
     }
@@ -635,7 +635,7 @@ function loadTaskChildrenRecurse(savedTask) {
         completed: savedTask.completed,
         parentId: savedTask.parentId,
     });
-    for (const task of savedTask.children){
+    for (const task of savedTask.children) {
         const childTask = loadTaskChildrenRecurse(task);
         tempTaskTree.children.push(childTask);
     }
@@ -652,7 +652,7 @@ function loadSettings() {
 
     // Init extension settings
     if (Object.keys(extension_settings.objective).length === 0) {
-        Object.assign(extension_settings.objective, { 'customPrompts': {'default':defaultPrompts}});
+        Object.assign(extension_settings.objective, { 'customPrompts': { 'default': defaultPrompts } });
     }
 
     // Bail on home screen
@@ -675,7 +675,7 @@ function loadSettings() {
     if ('objective' in chat_metadata.objective) {
 
         // Create root objective from legacy objective
-        taskTree = new ObjectiveTask({id:0, description: chat_metadata.objective.objective});
+        taskTree = new ObjectiveTask({ id: 0, description: chat_metadata.objective.objective });
         currentObjective = taskTree;
 
         // Populate root objective tree from legacy tasks
@@ -696,14 +696,14 @@ function loadSettings() {
         delete chat_metadata.objective.tasks;
     } else {
         // Load Objectives and Tasks (Normal path)
-        if (chat_metadata.objective.taskTree){
+        if (chat_metadata.objective.taskTree) {
             taskTree = loadTaskChildrenRecurse(chat_metadata.objective.taskTree);
         }
     }
 
     // Make sure there's a root task
     if (!taskTree) {
-        taskTree = new ObjectiveTask({id:0,description:$('#objective-text').val()});
+        taskTree = new ObjectiveTask({ id: 0, description: $('#objective-text').val() });
     }
 
     currentObjective = taskTree;
@@ -781,8 +781,8 @@ jQuery(() => {
     $('#objective-hide-tasks').on('click', onHideTasksInput);
     $('#objective_prompt_edit').on('click', onEditPromptClick);
     $('#objective-parent').hide();
-    $('#objective-parent').on('click',onParentClick);
-    $('#objective-text').on('focusout',onObjectiveTextFocusOut);
+    $('#objective-parent').on('click', onParentClick);
+    $('#objective-text').on('focusout', onObjectiveTextFocusOut);
     loadSettings();
 
     eventSource.on(event_types.CHAT_CHANGED, () => {
