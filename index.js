@@ -774,7 +774,8 @@ jQuery(() => {
     `;
 
     addManualTaskCheckUi();
-    $('#extensions_settings').append(settingsHtml);
+    const getContainer = () => $(document.getElementById('objective_container') ?? document.getElementById('extensions_settings'));
+    getContainer().append(settingsHtml);
     $('#objective-generate').on('click', onGenerateObjectiveClick);
     $('#objective-chat-depth').on('input', onChatDepthInput);
     $('#objective-check-frequency').on('input', onCheckFrequencyInput);
