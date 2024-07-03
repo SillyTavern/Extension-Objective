@@ -295,14 +295,14 @@ class ObjectiveTask {
     // Add a single task to the UI and attach event listeners for user edits
     addUiElement() {
         const template = `
-        <div id="objective-task-label-${this.id}" class="flex1 checkbox_label">
+        <div id="objective-task-label-${this.id}" class="flex1 checkbox_label alignItemsCenter">
             <input id="objective-task-complete-${this.id}" type="checkbox">
             <span class="text_pole objective-task" style="display: block" id="objective-task-description-${this.id}" contenteditable>${this.description}</span>
-            <div id="objective-task-delete-${this.id}" class="objective-task-button fa-solid fa-xmark fa-2x" title="Delete Task"></div>
-            <div id="objective-task-add-${this.id}" class="objective-task-button fa-solid fa-plus fa-2x" title="Add Task"></div>
-            <div id="objective-task-add-branch-${this.id}" class="objective-task-button fa-solid fa-code-fork fa-2x" title="Branch Task"></div>
-            <div id="objective-task-move-up-${this.id}" class="objective-task-button fa-solid fa-arrow-up fa-2x" title="Move Up" style="min-width: 22.5px"></div>
-            <div id="objective-task-move-down-${this.id}" class="objective-task-button fa-solid fa-arrow-down fa-2x" title="Move Down" style="min-width: 22.5px"></div>
+            <div id="objective-task-delete-${this.id}" class="objective-task-button fa-solid fa-xmark fa-fw fa-lg" title="Delete Task"></div>
+            <div id="objective-task-add-${this.id}" class="objective-task-button fa-solid fa-plus fa-fw fa-lg" title="Add Task"></div>
+            <div id="objective-task-add-branch-${this.id}" class="objective-task-button fa-solid fa-code-fork fa-fw fa-lg" title="Branch Task"></div>
+            <div id="objective-task-move-up-${this.id}" class="objective-task-button fa-solid fa-arrow-up fa-fw fa-lg" title="Move Up"></div>
+            <div id="objective-task-move-down-${this.id}" class="objective-task-button fa-solid fa-arrow-down fa-fw fa-lg" title="Move Down"></div>
         </div><br>
         `;
 
