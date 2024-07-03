@@ -783,12 +783,13 @@ function loadSettings() {
 
 function addManualTaskCheckUi() {
     const getWandContainer = () => $(document.getElementById('objective_wand_container') ?? document.getElementById('extensionsMenu'));
-    getWandContainer().append(`
+    const container = getWandContainer();
+    container.append(`
         <div id="objective-task-manual-check-menu-item" class="list-group-item flex-container flexGap5">
             <div id="objective-task-manual-check" class="extensionsMenuExtensionButton fa-regular fa-square-check"/></div>
             Manual Task Check
         </div>`);
-    $('#extensionsMenu').prepend(`
+    container.append(`
         <div id="objective-task-complete-current-menu-item" class="list-group-item flex-container flexGap5">
             <div id="objective-task-complete-current" class="extensionsMenuExtensionButton fa-regular fa-list-check"/></div>
             Complete Current Task
