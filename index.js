@@ -91,6 +91,11 @@ async function generateTasks() {
     toastr.success(`Generated ${currentObjective.children.length} tasks`, 'Done!');
 }
 
+async function markTaskCompleted() {
+    console.info(`User determined task '${currentTask.description} is completed.`);
+    currentTask.completeTask();
+}
+
 // Call Quiet Generate to check if a task is completed
 async function checkTaskCompleted() {
     // Make sure there are tasks
@@ -219,6 +224,8 @@ class ObjectiveTask {
     completedCheckbox;
     deleteTaskButton;
     addTaskButton;
+    moveUpBotton;
+    moveDownButton;
 
     constructor({ id = undefined, description, completed = false, parentId = '' }) {
         this.description = description;
@@ -288,12 +295,14 @@ class ObjectiveTask {
     // Add a single task to the UI and attach event listeners for user edits
     addUiElement() {
         const template = `
-        <div id="objective-task-label-${this.id}" class="flex1 checkbox_label">
+        <div id="objective-task-label-${this.id}" class="flex1 checkbox_label alignItemsCenter">
             <input id="objective-task-complete-${this.id}" type="checkbox">
             <span class="text_pole objective-task" style="display: block" id="objective-task-description-${this.id}" contenteditable>${this.description}</span>
-            <div id="objective-task-delete-${this.id}" class="objective-task-button fa-solid fa-xmark fa-2x" title="Delete Task"></div>
-            <div id="objective-task-add-${this.id}" class="objective-task-button fa-solid fa-plus fa-2x" title="Add Task"></div>
-            <div id="objective-task-add-branch-${this.id}" class="objective-task-button fa-solid fa-code-fork fa-2x" title="Branch Task"></div>
+            <div id="objective-task-delete-${this.id}" class="objective-task-button fa-solid fa-xmark fa-fw fa-lg" title="Delete Task"></div>
+            <div id="objective-task-add-${this.id}" class="objective-task-button fa-solid fa-plus fa-fw fa-lg" title="Add Task"></div>
+            <div id="objective-task-add-branch-${this.id}" class="objective-task-button fa-solid fa-code-fork fa-fw fa-lg" title="Branch Task"></div>
+            <div id="objective-task-move-up-${this.id}" class="objective-task-button fa-solid fa-arrow-up fa-fw fa-lg" title="Move Up"></div>
+            <div id="objective-task-move-down-${this.id}" class="objective-task-button fa-solid fa-arrow-down fa-fw fa-lg" title="Move Down"></div>
         </div><br>
         `;
 
@@ -306,6 +315,8 @@ class ObjectiveTask {
         this.deleteButton = $(`#objective-task-delete-${this.id}`);
         this.taskHtml = $(`#objective-task-label-${this.id}`);
         this.branchButton = $(`#objective-task-add-branch-${this.id}`);
+        this.moveUpButton = $(`objective-task-move-up-${this.id}`);
+        this.moveDownButton = $(`objective-task-move-down-${this.id}`);
 
         // Handle sub-task forking style
         if (this.children.length > 0) {
@@ -314,6 +325,23 @@ class ObjectiveTask {
             this.branchButton.css({ 'color': '' });
         }
 
+        const parent = getTaskById(this.parentId);
+        if (parent) {
+            let index = parent.children.indexOf(this);
+            if (index < 1) {
+                $(`#objective-task-move-up-${this.id}`).removeClass('fa-arrow-up');
+            } else {
+                $(`#objective-task-move-up-${this.id}`).addClass('fa-arrow-up');
+                $(`#objective-task-move-up-${this.id}`).on('click', () => (this.onMoveUpClick()));
+            }
+
+            if (index === (parent.children.length - 1)) {
+                $(`#objective-task-move-down-${this.id}`).removeClass('fa-arrow-down');
+            } else {
+                $(`#objective-task-move-down-${this.id}`).addClass('fa-arrow-down');
+                $(`#objective-task-move-down-${this.id}`).on('click', () => (this.onMoveDownClick()));
+            }
+        }
         // Add event listeners and set properties
         $(`#objective-task-complete-${this.id}`).prop('checked', this.completed);
         $(`#objective-task-complete-${this.id}`).on('click', () => (this.onCompleteClick()));
@@ -330,8 +358,12 @@ class ObjectiveTask {
         setCurrentTask();
     }
 
+    complete(completed) {
+        this.completed = completed;
+        this.children.forEach(child => child.complete(completed));
+    }
     onCompleteClick() {
-        this.completed = this.completedCheckbox.prop('checked');
+        this.complete(this.completedCheckbox.prop('checked'));
         this.checkParentComplete();
         setCurrentTask();
     }
@@ -350,6 +382,35 @@ class ObjectiveTask {
         parent.children.splice(index, 1);
         updateUiTaskList();
         setCurrentTask();
+    }
+
+    onMoveUpClick() {
+        const parent = getTaskById(this.parentId);
+        const index = parent.children.indexOf(this);
+        if (index != 0) {
+            let temp = parent.children[index - 1];
+            parent.children[index - 1] = parent.children[index];
+            parent.children[index] = temp;
+
+            updateUiTaskList();
+            if (currentTask) {
+                setCurrentTask(currentTask.taskId);
+            }
+        }
+    }
+
+    onMoveDownClick() {
+        const parent = getTaskById(this.parentId);
+        const index = parent.children.indexOf(this);
+        if (index < (parent.children.length - 1)) {
+            let temp = parent.children[index + 1];
+            parent.children[index + 1] = parent.children[index];
+            parent.children[index] = temp;
+
+            updateUiTaskList();
+            setCurrentTask();
+        }
+
     }
 
     onAddClick() {
@@ -722,12 +783,19 @@ function loadSettings() {
 
 function addManualTaskCheckUi() {
     const getWandContainer = () => $(document.getElementById('objective_wand_container') ?? document.getElementById('extensionsMenu'));
-    getWandContainer().append(`
+    const container = getWandContainer();
+    container.append(`
         <div id="objective-task-manual-check-menu-item" class="list-group-item flex-container flexGap5">
             <div id="objective-task-manual-check" class="extensionsMenuExtensionButton fa-regular fa-square-check"/></div>
             Manual Task Check
         </div>`);
+    container.append(`
+        <div id="objective-task-complete-current-menu-item" class="list-group-item flex-container flexGap5">
+            <div id="objective-task-complete-current" class="extensionsMenuExtensionButton fa-regular fa-list-check"/></div>
+            Complete Current Task
+        </div>`);
     $('#objective-task-manual-check-menu-item').attr('title', 'Trigger AI check of completed tasks').on('click', checkTaskCompleted);
+    $('#objective-task-complete-current-menu-item').attr('title', 'Mark the current task as completed.').on('click', markTaskCompleted);
 }
 
 jQuery(() => {
